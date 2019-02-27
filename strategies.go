@@ -80,36 +80,52 @@ func DBHPartitioner(src, dest int, totalPart int) int {
 }
 
 func GreedyPartitioner(src, dest int, totalPart int) int {
+	if len(partitionSizes) < totalPart {
+		for i := 0; i < totalPart; i++ {
+			partitionSizes[i] = 0
+		}
+	}
+
 	if membership[src] == nil {
 		membership[src] = mapset.NewSet()
 	}
 	if membership[dest] == nil {
 		membership[dest] = mapset.NewSet()
 	}
+	// fmt.Println(membership)
 	intersect := membership[src].Intersect(membership[dest])
 	union := membership[src].Union(membership[dest])
 	if intersect.Cardinality() > 0 {
 		pid := leastLoaded(intersect)
 		partitionSizes[pid]++
+		membership[src].Add(pid)
+		membership[dest].Add(pid)
 		return pid
 	}
 	if intersect.Cardinality() == 0 && union.Cardinality() > 0 {
 		pid := leastLoaded(union)
 		partitionSizes[pid]++
+		membership[src].Add(pid)
+		membership[dest].Add(pid)
 		return pid
 	}
 	if membership[src].Cardinality() == 0 && membership[dest].Cardinality() > 0 {
 		pid := leastLoaded(membership[dest])
 		partitionSizes[pid]++
+		membership[src].Add(pid)
+		membership[dest].Add(pid)
 		return pid
 	}
 	if membership[src].Cardinality() > 0 && membership[dest].Cardinality() == 0 {
 		pid := leastLoaded(membership[src])
 		partitionSizes[pid]++
+		membership[src].Add(pid)
+		membership[dest].Add(pid)
 		return pid
 	}
 	pid := leastLoaded(nil)
 	// This is the only case in which we need to update the membership
+	// fmt.Println(pid)
 	membership[src].Add(pid)
 	membership[dest].Add(pid)
 	partitionSizes[pid]++
@@ -281,6 +297,8 @@ func ETIPartitioner(partitions []Partition) []Partition {
 func leastLoaded(partitions mapset.Set) int {
 	// If the partiton set is empty it means that we just consider all partitions
 	// fmt.Println(partitions)
+	min := math.MaxInt32
+	minp := math.MaxInt32
 	if partitions == nil {
 		// fmt.Println("Partitions are empty. Filling them up")
 		partitions = mapset.NewSet()
@@ -291,8 +309,10 @@ func leastLoaded(partitions mapset.Set) int {
 	}
 	// fmt.Println(partitions)
 	// Get the leastloaded shit
-	min := math.MaxInt32
-	minp := math.MaxInt32
+
+	// if partitions.Cardinality() == 0 {
+	// 	minp = 0
+	// }
 	for p := range partitions.Iterator().C {
 		// fmt.Println(p.(int))
 		// fmt.Println(partitionSizes[p.(int)])

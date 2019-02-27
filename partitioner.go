@@ -44,8 +44,8 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 			}
 			// p := HashPartitioner(source, destination, totalPart)
 			// p := DBHPartitioner(source, destination, totalPart)
-			// p := GreedyPartitioner(source, destination, totalPart, partitions)
-			p := HDRFPartitioner(source, destination, totalPart, partitions)
+			p := GreedyPartitioner(source, destination, totalPart)
+			// p := HDRFPartitioner(source, destination, totalPart, partitions)
 			// fmt.Println(p)
 			partitions[p].Vertices.Add(source)
 			partitions[p].Vertices.Add(destination)

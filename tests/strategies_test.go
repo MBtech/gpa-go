@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bufio"
+	"fmt"
 	"hash/fnv"
 	"os"
 	"strconv"
@@ -66,6 +67,45 @@ func TestDBHPartitioner(t *testing.T) {
 	}
 }
 
+func TestGreedyPartitioner(t *testing.T) {
+	file, err := os.Open("../cmd/testgraph.txt")
+	sep := "\t"
+	if err != nil {
+		panic("couldn't read the file")
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	totalPart := 3
+	results := []int{0, 1, 2}
+
+	i := 0
+	for scanner.Scan() {
+		s := scanner.Text()
+		if !strings.Contains(s, "#") {
+
+			split := strings.Split(s, sep)
+			source, _ := strconv.Atoi(split[0])
+			destination, _ := strconv.Atoi(split[1])
+			p := partitioning.GreedyPartitioner(source, destination, totalPart)
+
+			fmt.Println(results)
+			if !Contains(results, p) {
+				t.Errorf("Mismatched partition decisions for src:%d dest:%d: partition %d should be %d", source, destination, p, results[i])
+			}
+			if i >= 12 {
+				temp := []int{}
+				for _, v := range results {
+					if v != p {
+						temp = append(temp, v)
+					}
+				}
+				results = temp
+			}
+			i++
+		}
+	}
+}
+
 func TestHDRFPartitioner(t *testing.T) {
 	file, err := os.Open("../cmd/testgraph.txt")
 	sep := "\t"
@@ -78,7 +118,7 @@ func TestHDRFPartitioner(t *testing.T) {
 	results := [][]int{{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {1}, {2}}
 	partitions := make([]partitioning.Partition, totalPart)
 
-	for i, _ := range partitions {
+	for i := range partitions {
 		partitions[i].Vertices = mapset.NewSet()
 	}
 
