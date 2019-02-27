@@ -37,10 +37,10 @@ func executionTime(partitions []partitioning.Partition) float32 {
 }
 
 func main() {
-	numPartitions := 8
-	// partitions := partitioning.Partitioner("com-lj.ungraph.txt", "\t", numPartitions)
+	numPartitions := 3
+	partitions := partitioning.Partitioner("com-lj.ungraph.txt", "\t", numPartitions)
 
-	partitions := partitioning.Partitioner("testgraph.txt", " ", numPartitions)
+	// partitions := partitioning.Partitioner("testgraph.txt", "\t", numPartitions)
 
 	// fmt.Println(partitions)
 	fmt.Println(executionTime(partitions))

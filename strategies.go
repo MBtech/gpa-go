@@ -127,22 +127,19 @@ func mergePartitions(t Tuple, partitions []Partition) []Partition {
 }
 
 func HDRFPartitioner(src, dest int, totalPart int, partitions []Partition) int {
-	pdSrc := 0
-	pdDest := 0
 	// Partial degree calculation
 	if pDegree[src] == 0 {
 		pDegree[src] = 1
 	} else {
 		pDegree[src]++
-		pdSrc = pDegree[src]
 	}
 	if pDegree[dest] == 0 {
 		pDegree[dest] = 1
 	} else {
 		pDegree[dest]++
-		pdDest = pDegree[dest]
 	}
-
+	pdSrc := pDegree[src]
+	pdDest := pDegree[dest]
 	thetaSrc := float64(pdSrc) / float64((pdSrc + pdDest))
 	thetaDest := 1 - thetaSrc
 	N := len(partitions)
@@ -150,11 +147,11 @@ func HDRFPartitioner(src, dest int, totalPart int, partitions []Partition) int {
 	cRep := make([]map[string]float64, N)
 	cHDRF := make([]map[string]float64, N)
 	l := 1.0
-	ep := 0.001
+	ep := 1.0
 	maxsize := maxSize(partitions)
 	minsize := minSize(partitions)
 	max := 0.0
-	maxi := 0
+	maxi := []int{}
 	for i := 0; i < N; i++ {
 		cBal[i] = l * float64(maxsize-len(partitions[i].Edges)) / (ep + float64(maxsize-minsize))
 		if cRep[i] == nil {
@@ -166,13 +163,18 @@ func HDRFPartitioner(src, dest int, totalPart int, partitions []Partition) int {
 
 		cRep[i][string(src)+","+string(dest)] = g(src, i, thetaSrc, partitions) + g(dest, i, thetaDest, partitions)
 		cHDRF[i][string(src)+","+string(dest)] = cRep[i][string(src)+","+string(dest)] + cBal[i]
+		// fmt.Printf("Score for partition %d is %.2f\n", i, cHDRF[i][string(src)+","+string(dest)])
 		if cHDRF[i][string(src)+","+string(dest)] > max {
 			max = cHDRF[i][string(src)+","+string(dest)]
-			maxi = i
+			maxi = []int{i}
+		} else if cHDRF[i][string(src)+","+string(dest)] == max {
+			max = cHDRF[i][string(src)+","+string(dest)]
+			maxi = append(maxi, i)
 		}
 	}
-
-	return maxi
+	// fmt.Printf("Selected Partition %d\n", maxi)
+	return maxi[0]
+	// return maxi[rand.Intn(len(maxi))]
 }
 
 func g(v, i int, theta float64, partitions []Partition) float64 {
