@@ -48,35 +48,38 @@ func HashPartitioner(src, dest int, totalPart int) int {
 	return p
 }
 
-func DBH(src, dest int, totalPart int) int {
-	pdSrc := 0
-	pdDest := 0
+func DBHPartitioner(src, dest int, totalPart int) int {
 	if pDegree[src] == 0 {
 		pDegree[src] = 1
 	} else {
-		pDegree[src] += 1
-		pdSrc = pDegree[src]
+		pDegree[src]++
+
 	}
 	if pDegree[dest] == 0 {
 		pDegree[dest] = 1
 	} else {
-		pDegree[dest] += 1
-		pdDest = pDegree[dest]
-	}
+		pDegree[dest]++
 
+	}
+	pdSrc := pDegree[src]
+	pdDest := pDegree[dest]
+	// fmt.Printf("Edge: %d, %d\n", src, dest)
+	// fmt.Printf("Degrees: %d, %d\n", pdSrc, pdDest)
 	if pdSrc < pdDest {
 		hsrc := fnv.New32a()
 		hsrc.Write([]byte(string(src)))
+		// fmt.Printf("Selected vertex %d\n", src)
 		return int(hsrc.Sum32()) % totalPart
-	} else {
-		hdest := fnv.New32a()
-		hdest.Write([]byte(string(dest)))
-		return int(hdest.Sum32()) % totalPart
 	}
+	hdest := fnv.New32a()
+	hdest.Write([]byte(string(dest)))
+	// fmt.Printf("Selected vertex %d\n", dest)
+	return int(hdest.Sum32()) % totalPart
+
 	// return p
 }
 
-func GreedyPartition(src, dest int, totalPart int) int {
+func GreedyPartitioner(src, dest int, totalPart int) int {
 	if membership[src] == nil {
 		membership[src] = mapset.NewSet()
 	}
@@ -87,31 +90,30 @@ func GreedyPartition(src, dest int, totalPart int) int {
 	union := membership[src].Union(membership[dest])
 	if intersect.Cardinality() > 0 {
 		pid := leastLoaded(intersect)
-		partitionSizes[pid] += 1
+		partitionSizes[pid]++
 		return pid
 	}
 	if intersect.Cardinality() == 0 && union.Cardinality() > 0 {
 		pid := leastLoaded(union)
-		partitionSizes[pid] += 1
+		partitionSizes[pid]++
 		return pid
 	}
 	if membership[src].Cardinality() == 0 && membership[dest].Cardinality() > 0 {
 		pid := leastLoaded(membership[dest])
-		partitionSizes[pid] += 1
+		partitionSizes[pid]++
 		return pid
 	}
 	if membership[src].Cardinality() > 0 && membership[dest].Cardinality() == 0 {
 		pid := leastLoaded(membership[src])
-		partitionSizes[pid] += 1
-		return pid
-	} else {
-		pid := leastLoaded(nil)
-		// This is the only case in which we need to update the membership
-		membership[src].Add(pid)
-		membership[dest].Add(pid)
-		partitionSizes[pid] += 1
+		partitionSizes[pid]++
 		return pid
 	}
+	pid := leastLoaded(nil)
+	// This is the only case in which we need to update the membership
+	membership[src].Add(pid)
+	membership[dest].Add(pid)
+	partitionSizes[pid]++
+	return pid
 
 }
 
@@ -124,20 +126,20 @@ func mergePartitions(t Tuple, partitions []Partition) []Partition {
 	return partitions
 }
 
-func HDRFPartition(src, dest int, totalPart int, partitions []Partition) int {
+func HDRFPartitioner(src, dest int, totalPart int, partitions []Partition) int {
 	pdSrc := 0
 	pdDest := 0
 	// Partial degree calculation
 	if pDegree[src] == 0 {
 		pDegree[src] = 1
 	} else {
-		pDegree[src] += 1
+		pDegree[src]++
 		pdSrc = pDegree[src]
 	}
 	if pDegree[dest] == 0 {
 		pDegree[dest] = 1
 	} else {
-		pDegree[dest] += 1
+		pDegree[dest]++
 		pdDest = pDegree[dest]
 	}
 
@@ -176,9 +178,9 @@ func HDRFPartition(src, dest int, totalPart int, partitions []Partition) int {
 func g(v, i int, theta float64, partitions []Partition) float64 {
 	if partitions[i].Vertices.Contains(v) {
 		return 1.0 + (1.0 - theta)
-	} else {
-		return 0.0
 	}
+	return 0.0
+
 	// return 0.0
 }
 func minSize(partitions []Partition) int {
@@ -202,7 +204,7 @@ func maxSize(partitions []Partition) int {
 }
 func mhash(b []byte) uint64 { return metro.Hash64(b, 0) }
 
-func ETIPartition(partitions []Partition) []Partition {
+func ETIPartitioner(partitions []Partition) []Partition {
 	// N := cap(partitions)
 	// merge := make(map[int][]int)
 	// pullMatrix := make(map[int][]float64)
@@ -280,7 +282,7 @@ func leastLoaded(partitions mapset.Set) int {
 	if partitions == nil {
 		// fmt.Println("Partitions are empty. Filling them up")
 		partitions = mapset.NewSet()
-		for k, _ := range partitionSizes {
+		for k := range partitionSizes {
 			// fmt.Println(k)
 			partitions.Add(k)
 		}

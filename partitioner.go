@@ -42,10 +42,10 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 				Dest:  destination,
 				Value: 0,
 			}
-			p := HashPartitioner(source, destination, totalPart)
-			// p := DBH(source, destination, totalPart)
-			// p := GreedyPartition(source, destination, totalPart, partitions)
-			// p := HDRFPartition(source, destination, totalPart, partitions)
+			// p := HashPartitioner(source, destination, totalPart)
+			p := DBHPartitioner(source, destination, totalPart)
+			// p := GreedyPartitioner(source, destination, totalPart, partitions)
+			// p := HDRFPartitioner(source, destination, totalPart, partitions)
 			// fmt.Println(p)
 			partitions[p].Vertices.Add(source)
 			partitions[p].Vertices.Add(destination)
@@ -53,7 +53,7 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 			edges = append(edges, e)
 		}
 	}
-	// partitions = ETIPartition(partitions)
+	// partitions = ETIPartitioner(partitions)
 	totalV := 0
 	for _, part := range partitions {
 		fmt.Println(part.Vertices.Cardinality())
