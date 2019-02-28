@@ -11,7 +11,7 @@ import (
 	"github.com/deckarep/golang-set"
 )
 
-func Partitioner(filename, sep string, numPartitions int) []Partition {
+func Partitioner(filename, sep string, numPartitions int, algo string) []Partition {
 
 	file, err := os.Open(filename)
 	// file, err := os.Open("testgraph.txt")
@@ -24,7 +24,12 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 	edges := []Edge{}
 	scanner := bufio.NewScanner(file)
 	totalPart := numPartitions
-	partitions := make([]Partition, totalPart)
+	partitions := []Partition{}
+	if algo == "eti" {
+		partitions = make([]Partition, 100)
+	} else {
+		partitions = make([]Partition, totalPart)
+	}
 
 	for i, _ := range partitions {
 		partitions[i].Vertices = mapset.NewSet()
@@ -42,10 +47,20 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 				Dest:  destination,
 				Value: 0,
 			}
-			// p := HashPartitioner(source, destination, totalPart)
-			// p := DBHPartitioner(source, destination, totalPart)
-			p := GreedyPartitioner(source, destination, totalPart)
-			// p := HDRFPartitioner(source, destination, totalPart, partitions)
+			p := 0
+			if algo == "hdrf" {
+				p = HDRFPartitioner(source, destination, totalPart, partitions)
+			} else if algo == "greedy" {
+				p = GreedyPartitioner(source, destination, totalPart)
+			} else if algo == "dbh" {
+				p = DBHPartitioner(source, destination, totalPart)
+			} else if algo == "hash" {
+				p = HashPartitioner(source, destination, totalPart)
+			} else {
+				// In case of ETI partition
+				p = HashPartitioner(source, destination, 100)
+			}
+
 			// fmt.Println(p)
 			partitions[p].Vertices.Add(source)
 			partitions[p].Vertices.Add(destination)
@@ -53,15 +68,10 @@ func Partitioner(filename, sep string, numPartitions int) []Partition {
 			edges = append(edges, e)
 		}
 	}
-	// partitions = ETIPartitioner(partitions)
-	totalV := 0
-	for _, part := range partitions {
-		fmt.Println(part.Vertices.Cardinality())
-		fmt.Println(len(part.Edges))
-		totalV += part.Vertices.Cardinality()
+	if algo == "eti" {
+		partitions = ETIPartitioner(partitions, totalPart)
 	}
 
-	fmt.Println(totalV)
 	fmt.Printf("Partitioning time %d s\n", time.Since(start)/1000000000)
 	return partitions
 	// fmt.Println(partitions[0].vertices)

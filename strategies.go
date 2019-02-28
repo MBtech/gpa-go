@@ -222,7 +222,7 @@ func maxSize(partitions []Partition) int {
 }
 func mhash(b []byte) uint64 { return metro.Hash64(b, 0) }
 
-func ETIPartitioner(partitions []Partition) []Partition {
+func ETIPartitioner(partitions []Partition, totalPart int) []Partition {
 	// N := cap(partitions)
 	// merge := make(map[int][]int)
 	// pullMatrix := make(map[int][]float64)
@@ -266,7 +266,7 @@ func ETIPartitioner(partitions []Partition) []Partition {
 			return pullMatrix[i].similarity > pullMatrix[j].similarity
 		})
 		fmt.Println(pullMatrix[0])
-		if len(partitions) <= 10 {
+		if len(partitions) <= totalPart {
 			break
 		}
 		fmt.Println("Merging the partitions")
